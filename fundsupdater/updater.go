@@ -5,13 +5,14 @@ import (
     "fmt"
     "io"
     "os"
+    "time"
 )
 
 type Transaction struct {
     Id string `json:"id"`
     Customer_id string `json:"customer_id"`
     Load_amount string `json:"load_amount"`
-    Time string `json:"time"`
+    Time time.Time `json:"time"`
 }
 
 func update(input_file_name string, output_file_name string) error {
@@ -33,25 +34,30 @@ func update(input_file_name string, output_file_name string) error {
     var t Transaction
 
     input_decoder := json.NewDecoder(input_file)
-    decode_err := input_decoder.Decode(&t)
-    if decode_err != nil {
-        if decode_err == io.EOF {
-            return nil
-        } else {
-            fmt.Fprintf(os.Stderr, "Decode input: %v\n", decode_err)
-            return decode_err
+    for {
+        decode_err := input_decoder.Decode(&t)
+        if decode_err != nil {
+            if decode_err == io.EOF {
+                return nil
+            } else {
+                fmt.Fprintf(os.Stderr, "Decode input: %v\n", decode_err)
+                return decode_err
+            }
         }
+        fmt.Printf(
+            "id %v customer_id %v load_amount %v time %v\n",
+            t.Id,
+            t.Customer_id,
+            t.Load_amount,
+            t.Time)  // debug
+
+        // Handle transaction and output error if any
+
+
+
+
     }
-    fmt.Printf(
-        "id %v customer_id %v load_amount %v time %v\n",
-        t.Id,
-        t.Customer_id,
-        t.Load_amount,
-        t.Time)  // debug
-
-
-
-
+    // Won't actually get here.
     return nil
 }
 
