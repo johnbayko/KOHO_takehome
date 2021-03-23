@@ -23,7 +23,7 @@ type Transaction struct {
 }
 
 var (
-    amount_re = regexp.MustCompile(`\$(\d+).(\d{2})`)
+    amountRe = regexp.MustCompile(`\$(\d+).(\d{2})`)
 )
 
 /*
@@ -33,7 +33,7 @@ var (
     Returns boolean to indicate end of transactions, and error for current
     transaction.
  */
-func get_transaction(input_decoder *json.Decoder, t *Transaction) (bool, error) {
+func getTransaction(inputDecoder *json.Decoder, t *Transaction) (bool, error) {
     type JsonTransaction struct {
         Id string `json:"id"`
         Customer_id string `json:"customer_id"`
@@ -42,67 +42,67 @@ func get_transaction(input_decoder *json.Decoder, t *Transaction) (bool, error) 
     }
     var jt JsonTransaction
 
-    decode_err := input_decoder.Decode(&jt)
-    if decode_err != nil {
-        if decode_err == io.EOF {
+    decodeErr := inputDecoder.Decode(&jt)
+    if decodeErr != nil {
+        if decodeErr == io.EOF {
             return true, nil
         } else {
-            fmt.Fprintf(os.Stderr, "Decode input: %v\n", decode_err)
-            return false, decode_err
+            fmt.Fprintf(os.Stderr, "Decode input: %v\n", decodeErr)
+            return false, decodeErr
         }
     }
     t.Id = jt.Id
     t.Customer_id = jt.Customer_id
 
     // Decode string to cents `$([\d]+).([\d]{2})`
-    amount_match := amount_re.FindStringSubmatch(jt.Load_amount)
-    if len(amount_match) != 3 {
+    amountMatch := amountRe.FindStringSubmatch(jt.Load_amount)
+    if len(amountMatch) != 3 {
         return false, fmt.Errorf(
             "Amount not a valid \"$dollar.cents\" string: %v", jt.Load_amount)
     }
 
     // 2 digits for cents is about 7 bits, so allow no more than 64-7 = 57 bits
     // for dollars.
-    amount_dollars, dollars_err := strconv.ParseInt(amount_match[1], 10, 57)
-    if dollars_err != nil {
-        return false, dollars_err
+    amountDollars, dollarsErr := strconv.ParseInt(amountMatch[1], 10, 57)
+    if dollarsErr != nil {
+        return false, dollarsErr
     }
     // The regex ensures this is 2 decimal digits, so parse will succeed,
     // error can be ignored.
-    amount_cents, _ := strconv.ParseInt(amount_match[2], 10, 7)
+    amountCents, _ := strconv.ParseInt(amountMatch[2], 10, 7)
 
-    t.Load_amount_cents = (amount_dollars * 100) + amount_cents
+    t.Load_amount_cents = (amountDollars * 100) + amountCents
     t.Time = jt.Time
 
     return false, nil
 }
 
-func update(input_file_name string, output_file_name string) error {
-    input_file, open_input_err := os.OpenFile(input_file_name, os.O_RDONLY, 0)
-    if open_input_err != nil {
-        fmt.Fprintf(os.Stderr, "Input file: %v\n", open_input_err)
-        return open_input_err
+func update(inputFileName string, outputFileName string) error {
+    inputFile, openInputErr := os.OpenFile(inputFileName, os.O_RDONLY, 0)
+    if openInputErr != nil {
+        fmt.Fprintf(os.Stderr, "Input file: %v\n", openInputErr)
+        return openInputErr
     }
-    defer input_file.Close()
+    defer inputFile.Close()
 
-    output_file, open_output_err :=
-        os.OpenFile(output_file_name, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0)
-    if open_output_err != nil {
-        fmt.Fprintf(os.Stderr, "Output file: %v\n", open_output_err)
-        return open_output_err
+    outputFile, openOutputErr :=
+        os.OpenFile(outputFileName, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0)
+    if openOutputErr != nil {
+        fmt.Fprintf(os.Stderr, "Output file: %v\n", openOutputErr)
+        return openOutputErr
     }
-    defer output_file.Close()
+    defer outputFile.Close()
 
     var t Transaction
 
-    input_decoder := json.NewDecoder(input_file)
+    inputDecoder := json.NewDecoder(inputFile)
     for {
-        is_end, decode_err := get_transaction(input_decoder, &t)
-        if is_end {
+        isEnd, decodeErr := getTransaction(inputDecoder, &t)
+        if isEnd {
             return nil
         }
-        if decode_err != nil {
-            fmt.Fprintf(os.Stderr, "Decode input: %v\n", decode_err)
+        if decodeErr != nil {
+            fmt.Fprintf(os.Stderr, "Decode input: %v\n", decodeErr)
             continue  // Try next transaction
         }
         fmt.Printf(
