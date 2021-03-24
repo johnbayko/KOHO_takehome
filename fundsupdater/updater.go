@@ -100,7 +100,11 @@ func putAcceptance(
     return nil
 }
 
-func update(inputFileName string, outputFileName string) error {
+func update(
+    inputFileName string,
+    outputFileName string,
+    handler *fundshandler.FundsHandler,
+) error {
     inputFile, openInputErr := os.OpenFile(inputFileName, os.O_RDONLY, 0)
     if openInputErr != nil {
         fmt.Fprintf(os.Stderr, "Input file: %v\n", openInputErr)
@@ -131,7 +135,7 @@ func update(inputFileName string, outputFileName string) error {
             continue  // Try next transaction
         }
         isAccepted :=
-            fundshandler.Load(t.Id, t.Customer_id, t.Load_amount_cents, t.Time)
+            handler.Load(t.Id, t.Customer_id, t.Load_amount_cents, t.Time)
 
         putAcceptErr := putAcceptance(outputEncoder, &t, isAccepted)
         if putAcceptErr != nil {

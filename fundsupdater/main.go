@@ -2,6 +2,8 @@ package main
 
 import (
     "os"
+
+    "github.com/johnbayko/KOHO_takehome/fundshandler"
 )
 
 const (
@@ -20,7 +22,9 @@ func main() {
         output_file_name = os.Args[2]
     }
 
-    err := update(input_file_name, output_file_name)
+    handler := fundshandler.NewFundsHandler()
+
+    err := update(input_file_name, output_file_name, handler)
     if err != nil {
         os.Exit(1)
     }

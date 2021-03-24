@@ -4,7 +4,17 @@ import (
     "time"
 )
 
-func Load(
+type FundsHandler struct {
+    // customer store details
+}
+
+func NewFundsHandler(/*customer store*/) *FundsHandler {
+    return &FundsHandler{
+        // customer store
+    }
+}
+
+func (handler *FundsHandler) Load(
     transId string,
     customerId string,
     loadAmountCents int64,
