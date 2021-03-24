@@ -23,7 +23,7 @@ type Transaction struct {
 }
 
 var (
-    amountRe = regexp.MustCompile(`\$(\d+).(\d{2})`)
+    amountRe = regexp.MustCompile(`\$(\d+)\.(\d{2})`)
 )
 
 /*
@@ -54,7 +54,7 @@ func getTransaction(inputDecoder *json.Decoder, t *Transaction) (bool, error) {
     t.Id = jt.Id
     t.Customer_id = jt.Customer_id
 
-    // Decode string to cents `$([\d]+).([\d]{2})`
+    // Decode string to cents.
     amountMatch := amountRe.FindStringSubmatch(jt.Load_amount)
     if len(amountMatch) != 3 {
         return false, fmt.Errorf(
