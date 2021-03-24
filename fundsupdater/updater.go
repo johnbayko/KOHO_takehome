@@ -8,6 +8,8 @@ import (
     "regexp"
     "strconv"
     "time"
+
+    "github.com/johnbayko/KOHO_takehome/fundshandler"
 )
 
 type Transaction struct {
@@ -47,7 +49,6 @@ func getTransaction(inputDecoder *json.Decoder, t *Transaction) (bool, error) {
         if decodeErr == io.EOF {
             return true, nil
         } else {
-            fmt.Fprintf(os.Stderr, "Decode input: %v\n", decodeErr)
             return false, decodeErr
         }
     }
@@ -77,6 +78,28 @@ func getTransaction(inputDecoder *json.Decoder, t *Transaction) (bool, error) {
     return false, nil
 }
 
+/*
+    Write a transaction acceptance record to the given json.Encoder.
+
+    Return error if there's a problem.
+ */
+func putAcceptance(
+    outputEncoder *json.Encoder, t *Transaction, isAccepted bool,
+) error {
+    type JsonAcceptance struct {
+        Id string `json:"id"`
+        Customer_id string `json:"customer_id"`
+        Accepted bool `json:"accepted"`
+    }
+    var ja JsonAcceptance = JsonAcceptance{t.Id, t.Customer_id, isAccepted}
+
+    encodeErr := outputEncoder.Encode(&ja)
+    if encodeErr != nil {
+        return encodeErr
+    }
+    return nil
+}
+
 func update(inputFileName string, outputFileName string) error {
     inputFile, openInputErr := os.OpenFile(inputFileName, os.O_RDONLY, 0)
     if openInputErr != nil {
@@ -85,38 +108,35 @@ func update(inputFileName string, outputFileName string) error {
     }
     defer inputFile.Close()
 
+    inputDecoder := json.NewDecoder(inputFile)
+
     outputFile, openOutputErr :=
-        os.OpenFile(outputFileName, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0)
+        os.OpenFile(outputFileName, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0666)
     if openOutputErr != nil {
         fmt.Fprintf(os.Stderr, "Output file: %v\n", openOutputErr)
         return openOutputErr
     }
     defer outputFile.Close()
 
-    var t Transaction
+    outputEncoder := json.NewEncoder(outputFile)
 
-    inputDecoder := json.NewDecoder(inputFile)
+    var t Transaction
     for {
-        isEnd, decodeErr := getTransaction(inputDecoder, &t)
+        isEnd, getTransErr := getTransaction(inputDecoder, &t)
         if isEnd {
             return nil
         }
-        if decodeErr != nil {
-            fmt.Fprintf(os.Stderr, "Decode input: %v\n", decodeErr)
+        if getTransErr != nil {
+            fmt.Fprintf(os.Stderr, "Get transaction: %v\n", getTransErr)
             continue  // Try next transaction
         }
-        fmt.Printf(
-            "id %v customer_id %v load_amount %v time %v\n",
-            t.Id,
-            t.Customer_id,
-            t.Load_amount_cents,
-            t.Time)  // debug
+        isAccepted :=
+            fundshandler.Load(t.Id, t.Customer_id, t.Load_amount_cents, t.Time)
 
-        // Handle transaction and output error if any
-
-
-
-
+        putAcceptErr := putAcceptance(outputEncoder, &t, isAccepted)
+        if putAcceptErr != nil {
+            fmt.Fprintf(os.Stderr, "Put acceptance record: %v\n", putAcceptErr)
+        }
     }
     // Won't actually get here.
     return nil
