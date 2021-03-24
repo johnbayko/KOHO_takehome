@@ -8,8 +8,8 @@ type FundsHandler struct {
     // customer store details
 }
 
-func NewFundsHandler(/*customer store*/) *FundsHandler {
-    return &FundsHandler{
+func NewFundsHandler(/*customer store*/) FundsHandler {
+    return FundsHandler{
         // customer store
     }
 }
