@@ -2,10 +2,11 @@ package custstoresqlite
 
 import (
     "database/sql"
-    "fmt"  // debug
     "time"
 
     _ "github.com/mattn/go-sqlite3"
+
+    "github.com/johnbayko/KOHO_takehome/custstore"
 )
 
 type CustStoreSqlite struct {
@@ -56,7 +57,9 @@ func (cs *CustStoreSqlite) BalanceAdd(
     }
     if transIdRows.Next() {
         // Transaciton ID already there, don't insert again (but not an error)
-        return nil
+        // Need to add an indicator that it's not applied. Maybe a specific
+        // error.
+        return custstore.DuplicateError
     }
     // Update customers
     // Update accounts

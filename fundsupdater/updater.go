@@ -10,6 +10,7 @@ import (
     "time"
 
     "github.com/johnbayko/KOHO_takehome/fundshandler"
+    "github.com/johnbayko/KOHO_takehome/custstore"
 )
 
 type Transaction struct {
@@ -134,10 +135,18 @@ func update(
             fmt.Fprintf(os.Stderr, "Get transaction: %v\n", getTransErr)
             continue  // Try next transaction
         }
-        isAccepted :=
-            handler.Load(t.Id, t.Customer_id, t.Load_amount_cents, t.Time)
 
-        putAcceptErr := putAcceptance(outputEncoder, &t, isAccepted)
+        loadErr :=
+            handler.Load(t.Id, t.Customer_id, t.Load_amount_cents, t.Time)
+        if loadErr != nil {
+            if loadErr == custstore.DuplicateError {
+                // Duplicate is not a real error, just ignore.
+                continue
+            }
+            fmt.Fprintf(os.Stderr, "Balance update: %v\n", loadErr)
+        }
+
+        putAcceptErr := putAcceptance(outputEncoder, &t, true)
         if putAcceptErr != nil {
             fmt.Fprintf(os.Stderr, "Put acceptance record: %v\n", putAcceptErr)
         }
