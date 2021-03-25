@@ -28,6 +28,7 @@ func main() {
     storeErr := store.Open()
     if storeErr != nil {
         fmt.Fprintf(os.Stderr, "Opening custome store: %v", storeErr)
+        os.Exit(1)
     }
     handler := fundshandler.NewFundsHandler(store)
 
