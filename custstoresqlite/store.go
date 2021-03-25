@@ -2,7 +2,7 @@ package custstoresqlite
 
 import (
     "database/sql"
-    "fmt"  // debug
+//    "fmt"  // debug
     "time"
 
     _ "github.com/mattn/go-sqlite3"
@@ -13,8 +13,12 @@ import (
 type CustStoreSqlite struct {
     db *sql.DB
 
-    checkTransId *sql.Stmt
-    checkCustId *sql.Stmt
+    checkTransIdStmt *sql.Stmt
+    checkCustIdStmt *sql.Stmt
+    createCustomerStmt *sql.Stmt
+    createAccountStmt *sql.Stmt
+    updateAccountStmt *sql.Stmt
+    addTransactionStmt *sql.Stmt
 }
 
 func NewCustStoreSqlite() *CustStoreSqlite {
@@ -28,61 +32,112 @@ func (cs *CustStoreSqlite) Open() error {
     }
     cs.db = db
 
-    checkTransId, err := db.Prepare("select id from transactions where id = ?")
+    checkTransIdStmt, err := db.Prepare("select id from transactions where id = ?")
     if err != nil {
         db.Close()
         return err
     }
-    cs.checkTransId = checkTransId
+    cs.checkTransIdStmt = checkTransIdStmt
 
-    checkCustId, err := db.Prepare("select customer_id from customer where customer_id = ?")
+    checkCustIdStmt, err := db.Prepare("select customer_id from customers where customer_id = ?")
     if err != nil {
         db.Close()
         return err
     }
-    cs.checkCustId = checkCustId
+    cs.checkCustIdStmt = checkCustIdStmt
+
+    createCustomerStmt, err := db.Prepare("insert into customers (customer_id) values (?)")
+    if err != nil {
+        db.Close()
+        return err
+    }
+    cs.createCustomerStmt = createCustomerStmt
+
+    createAccountStmt, err := db.Prepare("insert into accounts (customer_id, balance) values (?, 0)")
+    if err != nil {
+        db.Close()
+        return err
+    }
+    cs.createAccountStmt = createAccountStmt
+
+    updateAccountStmt, err := db.Prepare("update accounts set balance = balance + ? where customer_id = ?")
+    if err != nil {
+        db.Close()
+        return err
+    }
+    cs.updateAccountStmt = updateAccountStmt
+
+    addTransactionStmt, err := db.Prepare("insert into transactions (id, customer_id, load_amount, time) values (?, ?, ?, ?)")
+    if err != nil {
+        db.Close()
+        return err
+    }
+    cs.addTransactionStmt = addTransactionStmt
 
     return nil
 }
 
 func (cs *CustStoreSqlite) Close() {
-    cs.checkTransId.Close()
-    cs.checkCustId.Close()
+    cs.checkTransIdStmt.Close()
+    cs.checkCustIdStmt.Close()
+    cs.createCustomerStmt.Close()
+    cs.createAccountStmt.Close()
+    cs.updateAccountStmt.Close()
+    cs.addTransactionStmt.Close()
+
     cs.db.Close()
 }
 
 // Not exported
 
 func (cs *CustStoreSqlite) isDuplicate(id string) (bool, error) {
-    transIdRows, err := cs.checkTransId.Query(id)
+    transIdRows, err := cs.checkTransIdStmt.Query(id)
     if err != nil {
         return false, err
     }
     defer transIdRows.Close()
 
     if transIdRows.Next() {
-        // Transaciton ID already there, don't insert again (but not an error)
-        // Need to add an indicator that it's not applied. Maybe a specific
-        // error.
         return true, nil
     }
     return false, nil
 }
 
 func (cs *CustStoreSqlite) hasCustomer(customerId string) (bool, error) {
-    custIdRows, err := cs.checkCustId.Query(customerId)
+    custIdRows, err := cs.checkCustIdStmt.Query(customerId)
     if err != nil {
         return false, err
     }
     defer custIdRows.Close()
 
     if custIdRows.Next() {
-        // Transaciton ID already there, don't insert again (but not an error)
-        // Need to add an indicator that it's not applied. Maybe a specific
-        // error.
         return true, nil
     }
     return false, nil
+}
+
+func (cs *CustStoreSqlite) createCustomerAndAccount(customerId string) error {
+    _, err := cs.createCustomerStmt.Exec(customerId)
+    if err != nil {
+        return err
+    }
+
+    _, err = cs.createAccountStmt.Exec(customerId)
+    return err
+}
+
+func (cs *CustStoreSqlite) updateAccount(
+    loadAmountCents int64, customerId string,
+) error {
+    _, err := cs.updateAccountStmt.Exec(loadAmountCents, customerId)
+    return err
+}
+
+func (cs *CustStoreSqlite) addTransaction(
+    id string, customerId string, loadAmountCents int64, time time.Time,
+) error {
+    _, err := cs.addTransactionStmt.Exec(id, customerId, loadAmountCents, time)
+    return err
 }
 
 // Exported
@@ -106,19 +161,32 @@ func (cs *CustStoreSqlite) BalanceAdd(
     }
 
     // Update customers
-    hasCustomer, err := cs.hasCustomer(id)
+    hasCustomer, err := cs.hasCustomer(customerId)
     if err != nil {
         return err
     }
     if !hasCustomer {
         // There is no cuseomer, need to create customer and account.
-        fmt.Printf("No customer id %v\n", customerId)  // debug
+        err = cs.createCustomerAndAccount(customerId)
+        if err != nil {
+            return err
+        }
     }
 
-
     // Update accounts
+    err = cs.updateAccount(loadAmountCents, customerId)
+    if err != nil {
+        // Customer and account records will remain created.
+        return err
+    }
 
     // Add to transactions
+    err = cs.addTransaction(id, customerId, loadAmountCents, time)
+    if err != nil {
+        // Customer and account records will remain created and updated,
+        // no rollback.
+        return err
+    }
 
     return nil
 }
