@@ -1,9 +1,9 @@
 package main
 
 import (
+    "fmt"
     "os"
 
-//    "github.com/johnbayko/KOHO_takehome/custstore"
     "github.com/johnbayko/KOHO_takehome/custstoresqlite"
     "github.com/johnbayko/KOHO_takehome/fundshandler"
 )
@@ -25,9 +25,15 @@ func main() {
     }
 
     store := custstoresqlite.NewCustStoreSqlite()
+    storeErr := store.Open()
+    if storeErr != nil {
+        fmt.Fprintf(os.Stderr, "Opening custome store: %v", storeErr)
+    }
     handler := fundshandler.NewFundsHandler(store)
 
     err := update(input_file_name, output_file_name, handler)
+    store.Close()
+
     if err != nil {
         os.Exit(1)
     }
