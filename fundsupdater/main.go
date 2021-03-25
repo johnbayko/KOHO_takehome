@@ -3,6 +3,8 @@ package main
 import (
     "os"
 
+//    "github.com/johnbayko/KOHO_takehome/custstore"
+    "github.com/johnbayko/KOHO_takehome/custstoresqlite"
     "github.com/johnbayko/KOHO_takehome/fundshandler"
 )
 
@@ -22,7 +24,8 @@ func main() {
         output_file_name = os.Args[2]
     }
 
-    handler := fundshandler.NewFundsHandler()
+    store := custstoresqlite.NewCustStoreSqlite()
+    handler := fundshandler.NewFundsHandler(store)
 
     err := update(input_file_name, output_file_name, handler)
     if err != nil {

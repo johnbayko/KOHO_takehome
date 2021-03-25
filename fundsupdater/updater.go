@@ -103,7 +103,7 @@ func putAcceptance(
 func update(
     inputFileName string,
     outputFileName string,
-    handler fundshandler.FundsHandler,
+    handler *fundshandler.FundsHandler,
 ) error {
     inputFile, openInputErr := os.OpenFile(inputFileName, os.O_RDONLY, 0)
     if openInputErr != nil {

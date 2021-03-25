@@ -2,15 +2,18 @@ package fundshandler
 
 import (
     "time"
+
+    "github.com/johnbayko/KOHO_takehome/custstore"
 )
 
 type FundsHandler struct {
     // customer store details
+    store custstore.CustStore
 }
 
-func NewFundsHandler(/*customer store*/) FundsHandler {
-    return FundsHandler{
-        // customer store
+func NewFundsHandler(cs custstore.CustStore) *FundsHandler {
+    return &FundsHandler{
+        store: cs,
     }
 }
 
@@ -20,8 +23,5 @@ func (handler *FundsHandler) Load(
     loadAmountCents int64,
     transTime time.Time,
 ) bool {
-    if len(transId) < 5 {
-        return false
-    }
     return true
 }

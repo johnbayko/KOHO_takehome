@@ -1,0 +1,8 @@
+# Requires: go, sqlite3
+
+# Get go dependencies
+go get github.com/mattn/go-sqlite3
+
+# Create sqlite3 database
+sqlite3 cust_store.db < custstoresqlite/setup.sql
+
