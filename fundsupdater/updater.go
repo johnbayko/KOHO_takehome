@@ -139,11 +139,11 @@ func update(
         loadAccepted, loadErr :=
             handler.Load(t.Id, t.Customer_id, t.Load_amount_cents, t.Time)
         if loadErr != nil {
-            if loadErr == custstore.DuplicateError {
-                // Duplicate is not a real error, just ignore.
+            // Duplicate is not a real error, just ignore (accept).
+            if loadErr != custstore.DuplicateError {
+                fmt.Fprintf(os.Stderr, "Balance update: %v\n", loadErr)
                 continue
             }
-            fmt.Fprintf(os.Stderr, "Balance update: %v\n", loadErr)
         }
 
         putAcceptErr := putAcceptance(outputEncoder, &t, loadAccepted)
