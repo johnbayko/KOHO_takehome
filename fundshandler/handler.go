@@ -22,8 +22,9 @@ func (handler *FundsHandler) Load(
     customerId string,
     loadAmountCents int64,
     transTime time.Time,
-) error {
+) (bool, error) {
     err := handler.store.BalanceAdd(
         transId, customerId, loadAmountCents, transTime)
-    return err
+    // Accepted if no rule checks fail, so is true even if err is not nil.
+    return true, err
 }

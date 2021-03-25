@@ -136,7 +136,7 @@ func update(
             continue  // Try next transaction
         }
 
-        loadErr :=
+        loadAccepted, loadErr :=
             handler.Load(t.Id, t.Customer_id, t.Load_amount_cents, t.Time)
         if loadErr != nil {
             if loadErr == custstore.DuplicateError {
@@ -146,7 +146,7 @@ func update(
             fmt.Fprintf(os.Stderr, "Balance update: %v\n", loadErr)
         }
 
-        putAcceptErr := putAcceptance(outputEncoder, &t, true)
+        putAcceptErr := putAcceptance(outputEncoder, &t, loadAccepted)
         if putAcceptErr != nil {
             fmt.Fprintf(os.Stderr, "Put acceptance record: %v\n", putAcceptErr)
         }
