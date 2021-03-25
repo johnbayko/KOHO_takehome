@@ -19,6 +19,8 @@ type CustStoreSqlite struct {
     createAccountStmt *sql.Stmt
     updateAccountStmt *sql.Stmt
     addTransactionStmt *sql.Stmt
+
+    loadAmountPerPeriodStmt *sql.Stmt
 }
 
 func NewCustStoreSqlite() *CustStoreSqlite {
@@ -74,6 +76,14 @@ func (cs *CustStoreSqlite) Open() error {
     }
     cs.addTransactionStmt = addTransactionStmt
 
+    loadAmountPerPeriodStmt, err := db.Prepare("select sum(load_amount) from transactions where customer_id = ? and time >= ? and time < ?")
+    if err != nil {
+        db.Close()
+        return err
+    }
+    cs.loadAmountPerPeriodStmt = loadAmountPerPeriodStmt
+
+
     return nil
 }
 
@@ -84,6 +94,8 @@ func (cs *CustStoreSqlite) Close() {
     cs.createAccountStmt.Close()
     cs.updateAccountStmt.Close()
     cs.addTransactionStmt.Close()
+
+    cs.loadAmountPerPeriodStmt.Close()
 
     cs.db.Close()
 }
@@ -189,4 +201,25 @@ func (cs *CustStoreSqlite) BalanceAdd(
     }
 
     return nil
+}
+
+func (cs *CustStoreSqlite) GetLoadAmountForPeriod(
+    customerId string, startAt time.Time, endBefore time.Time,
+) (int64, error) {
+    loadAmountRows, err :=
+        cs.loadAmountPerPeriodStmt.Query(customerId, startAt, endBefore)
+    if err != nil {
+        return 0, err
+    }
+    defer loadAmountRows.Close()
+
+    // sum() will always return only one row on success.
+    if !loadAmountRows.Next() {
+        // Nothing? Shouldn't be possible, but assume nothing found.
+        return 0, nil
+    }
+    var loadAmountCents int64
+    loadAmountRows.Scan(&loadAmountCents)
+
+    return loadAmountCents, nil
 }

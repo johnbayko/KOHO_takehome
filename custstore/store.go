@@ -11,6 +11,9 @@ type CustStore interface {
     BalanceAdd(
         id string, customerId string, loadAmountCents int64, time time.Time,
     ) error
+    GetLoadAmountForPeriod(
+        customerId string, startAt time.Time, endBefore time.Time,
+    ) (int64, error)
 }
 
 
