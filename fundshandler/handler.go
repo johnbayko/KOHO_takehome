@@ -1,6 +1,8 @@
 package fundshandler
 
 import (
+    "fmt"
+    "os"
     "time"
 
     "github.com/johnbayko/KOHO_takehome/custstore"
@@ -23,5 +25,11 @@ func (handler *FundsHandler) Load(
     loadAmountCents int64,
     transTime time.Time,
 ) bool {
+    err := handler.store.BalanceAdd(
+        transId, customerId, loadAmountCents, transTime)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Balance update: %v", err)
+        return false
+    }
     return true
 }
