@@ -14,6 +14,9 @@ type CustStore interface {
     GetLoadAmountForPeriod(
         customerId string, startAt time.Time, endBefore time.Time,
     ) (int64, error)
+    GetNumForPeriod(
+        customerId string, startAt time.Time, endBefore time.Time,
+    ) (int64, error)
 }
 
 

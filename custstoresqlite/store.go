@@ -2,7 +2,6 @@ package custstoresqlite
 
 import (
     "database/sql"
-//    "fmt"  // debug
     "time"
 
     _ "github.com/mattn/go-sqlite3"
@@ -21,6 +20,7 @@ type CustStoreSqlite struct {
     addTransactionStmt *sql.Stmt
 
     loadAmountPerPeriodStmt *sql.Stmt
+    numPerPeriodStmt *sql.Stmt
 }
 
 func NewCustStoreSqlite() *CustStoreSqlite {
@@ -83,6 +83,12 @@ func (cs *CustStoreSqlite) Open() error {
     }
     cs.loadAmountPerPeriodStmt = loadAmountPerPeriodStmt
 
+    numPerPeriodStmt, err := db.Prepare("select count(customer_id) from transactions where customer_id = ? and time >= ? and time < ?")
+    if err != nil {
+        db.Close()
+        return err
+    }
+    cs.numPerPeriodStmt = numPerPeriodStmt
 
     return nil
 }
@@ -96,6 +102,7 @@ func (cs *CustStoreSqlite) Close() {
     cs.addTransactionStmt.Close()
 
     cs.loadAmountPerPeriodStmt.Close()
+    cs.numPerPeriodStmt.Close()
 
     cs.db.Close()
 }
@@ -222,4 +229,25 @@ func (cs *CustStoreSqlite) GetLoadAmountForPeriod(
     loadAmountRows.Scan(&loadAmountCents)
 
     return loadAmountCents, nil
+}
+
+func (cs *CustStoreSqlite) GetNumForPeriod(
+    customerId string, startAt time.Time, endBefore time.Time,
+) (int64, error) {
+    numRows, err :=
+        cs.numPerPeriodStmt.Query(customerId, startAt, endBefore)
+    if err != nil {
+        return 0, err
+    }
+    defer numRows.Close()
+
+    // count() will always return only one row on success.
+    if !numRows.Next() {
+        // Nothing? Shouldn't be possible, but assume nothing found.
+        return 0, nil
+    }
+    var num int64
+    numRows.Scan(&num)
+
+    return num, nil
 }

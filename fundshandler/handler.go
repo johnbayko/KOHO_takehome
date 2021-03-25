@@ -1,7 +1,6 @@
 package fundshandler
 
 import (
-    //"fmt"  // debug
     "time"
 
     "github.com/johnbayko/KOHO_takehome/custstore"
@@ -28,7 +27,7 @@ const (
     TRANSACTION_COUNT_LIMIT_DAY = 3
 )
 
-func (handler *FundsHandler) checkPeriodLimit(
+func (handler *FundsHandler) checkAmountPeriodLimit(
     customerId string,
     loadAmountCents int64,
     startAt time.Time,
@@ -43,11 +42,11 @@ func (handler *FundsHandler) checkPeriodLimit(
     }
     newLoadAmountCents := totalLoadAmountCents + loadAmountCents
 
-    isPerDayLimitOk := (newLoadAmountCents < loadAmountCentsLimit)
+    isPerDayLimitOk := (newLoadAmountCents <= loadAmountCentsLimit)
     return isPerDayLimitOk, nil
 }
 
-func (handler *FundsHandler) checkPerDayLimit(
+func (handler *FundsHandler) checkAmountPerDayLimit(
     customerId string, loadAmountCents int64, transTime time.Time,
 ) (bool, error) {
     startAt :=
@@ -63,7 +62,7 @@ func (handler *FundsHandler) checkPerDayLimit(
         )
     endBefore := startAt.Add(DAY)
 
-    return handler.checkPeriodLimit(
+    return handler.checkAmountPeriodLimit(
             customerId,
             loadAmountCents,
             startAt,
@@ -72,7 +71,7 @@ func (handler *FundsHandler) checkPerDayLimit(
         )
 }
 
-func (handler *FundsHandler) checkPerWeekLimit(
+func (handler *FundsHandler) checkAmountPerWeekLimit(
     customerId string, loadAmountCents int64, transTime time.Time,
 ) (bool, error) {
     transDay :=
@@ -109,7 +108,7 @@ func (handler *FundsHandler) checkPerWeekLimit(
     startAt := transDay.Add(-durationFromMonday)
     endBefore := startAt.Add(WEEK)
 
-    return handler.checkPeriodLimit(
+    return handler.checkAmountPeriodLimit(
             customerId,
             loadAmountCents,
             startAt,
@@ -118,27 +117,64 @@ func (handler *FundsHandler) checkPerWeekLimit(
         )
 }
 
+func (handler *FundsHandler) checkNumPerDayLimit(
+    customerId string, transTime time.Time,
+) (bool, error) {
+    startAt :=
+        time.Date(
+            transTime.Year(),
+            transTime.Month(),
+            transTime.Day(),
+            0,
+            0,
+            0,
+            0,
+            transTime.Location(),
+        )
+    endBefore := startAt.Add(DAY)
+
+    totalNum, err :=
+        handler.store.GetNumForPeriod(customerId, startAt, endBefore)
+    if err != nil {
+        // Can't ensure true, assume false.
+        return false, err
+    }
+    newNum := totalNum + 1
+
+    isPerDayLimitOk := (newNum <= TRANSACTION_COUNT_LIMIT_DAY)
+    return isPerDayLimitOk, nil
+}
+
 func (handler *FundsHandler) Load(
     transId string,
     customerId string,
     loadAmountCents int64,
     transTime time.Time,
 ) (bool, error) {
-    isPerDayLimitOk, err :=
-        handler.checkPerDayLimit(customerId, loadAmountCents, transTime)
+    isAmountPerDayLimitOk, err :=
+        handler.checkAmountPerDayLimit(customerId, loadAmountCents, transTime)
     if err != nil {
-        return isPerDayLimitOk, err
+        return isAmountPerDayLimitOk, err
     }
-    if !isPerDayLimitOk {
+    if !isAmountPerDayLimitOk {
         return false, nil
     }
 
-    isPerWeekLimitOk, err :=
-        handler.checkPerWeekLimit(customerId, loadAmountCents, transTime)
+    isAmountPerWeekLimitOk, err :=
+        handler.checkAmountPerWeekLimit(customerId, loadAmountCents, transTime)
     if err != nil {
-        return isPerWeekLimitOk, err
+        return isAmountPerWeekLimitOk, err
     }
-    if !isPerWeekLimitOk {
+    if !isAmountPerWeekLimitOk {
+        return false, nil
+    }
+
+    isNumPerDayLimitOk, err :=
+        handler.checkNumPerDayLimit(customerId, transTime)
+    if err != nil {
+        return isNumPerDayLimitOk, err
+    }
+    if !isNumPerDayLimitOk {
         return false, nil
     }
 
