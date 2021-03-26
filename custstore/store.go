@@ -16,9 +16,7 @@ type CustStore interface {
         accepted bool,
     ) error
 
-    BalanceAdd(
-        id string, customerId string, loadAmountCents int64, time time.Time,
-    ) error
+    BalanceAdd(customerId string, loadAmountCents int64) error
 
     GetLoadAmountForPeriod(
         customerId string, startAt time.Time, endBefore time.Time,

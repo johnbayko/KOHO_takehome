@@ -200,17 +200,8 @@ func (cs *CustStoreSqlite) AddTransaction(
     Returns error if fails.
  */
 func (cs *CustStoreSqlite) BalanceAdd(
-    id string, customerId string, loadAmountCents int64, time time.Time,
+    customerId string, loadAmountCents int64,
 ) error {
-    // Check transaction id
-    isDuplicate, err := cs.isDuplicate(id, customerId)
-    if err != nil {
-        return err
-    }
-    if isDuplicate {
-        return custstore.DuplicateError
-    }
-
     // Update customers
     hasCustomer, err := cs.hasCustomer(customerId)
     if err != nil {
@@ -228,14 +219,6 @@ func (cs *CustStoreSqlite) BalanceAdd(
     err = cs.updateAccount(loadAmountCents, customerId)
     if err != nil {
         // Customer and account records will remain created.
-        return err
-    }
-
-    // Add to transactions
-    err = cs.addTransaction(id, customerId, loadAmountCents, time, true)
-    if err != nil {
-        // Customer and account records will remain created and updated,
-        // no rollback.
         return err
     }
 

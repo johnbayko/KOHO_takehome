@@ -191,15 +191,20 @@ func (handler *FundsHandler) Load(
     if err != nil {
         return isOk, err
     }
-    if !isOk {
-        err = handler.store.AddTransaction(
-            transId, customerId, loadAmountCents, transTime, false)
-        return false, err
+
+    // Add to transactions. Duplicate will register as specific error and won't
+    // try to apply.
+    err = handler.store.AddTransaction(
+            transId, customerId, loadAmountCents, transTime, isOk,
+        )
+    if err != nil {
+        return isOk, err
     }
 
-    err = handler.store.BalanceAdd(
-        transId, customerId, loadAmountCents, transTime)
+    if isOk {
+        err = handler.store.BalanceAdd(customerId, loadAmountCents)
+    }
 
     // Accepted if no rule checks fail, so is true even if err is not nil.
-    return true, err
+    return isOk, err
 }
