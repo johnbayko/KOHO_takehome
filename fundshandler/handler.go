@@ -145,7 +145,7 @@ func (handler *FundsHandler) checkNumPerDayLimit(
     return isPerDayLimitOk, nil
 }
 
-func (handler *FundsHandler) Load(
+func (handler *FundsHandler) checkLimits(
     transId string,
     customerId string,
     loadAmountCents int64,
@@ -175,6 +175,23 @@ func (handler *FundsHandler) Load(
         return isNumPerDayLimitOk, err
     }
     if !isNumPerDayLimitOk {
+        return false, nil
+    }
+    return true, nil
+}
+
+func (handler *FundsHandler) Load(
+    transId string,
+    customerId string,
+    loadAmountCents int64,
+    transTime time.Time,
+) (bool, error) {
+    isOk, err :=
+        handler.checkLimits(transId, customerId, loadAmountCents, transTime)
+    if err != nil {
+        return isOk, err
+    }
+    if !isOk {
         return false, nil
     }
 
