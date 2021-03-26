@@ -34,7 +34,7 @@ func (cs *CustStoreSqlite) Open() error {
     }
     cs.db = db
 
-    checkTransIdStmt, err := db.Prepare("select id from transactions where id = ?")
+    checkTransIdStmt, err := db.Prepare("select id from transactions where id = ? and customer_id = ?")
     if err != nil {
         db.Close()
         return err
@@ -69,21 +69,21 @@ func (cs *CustStoreSqlite) Open() error {
     }
     cs.updateAccountStmt = updateAccountStmt
 
-    addTransactionStmt, err := db.Prepare("insert into transactions (id, customer_id, load_amount, time) values (?, ?, ?, ?)")
+    addTransactionStmt, err := db.Prepare("insert into transactions (id, customer_id, load_amount, time, accepted) values (?, ?, ?, ?, ?)")
     if err != nil {
         db.Close()
         return err
     }
     cs.addTransactionStmt = addTransactionStmt
 
-    loadAmountPerPeriodStmt, err := db.Prepare("select sum(load_amount) from transactions where customer_id = ? and time >= ? and time < ?")
+    loadAmountPerPeriodStmt, err := db.Prepare("select sum(load_amount) from transactions where customer_id = ? and time >= ? and time < ? and accepted = 1")
     if err != nil {
         db.Close()
         return err
     }
     cs.loadAmountPerPeriodStmt = loadAmountPerPeriodStmt
 
-    numPerPeriodStmt, err := db.Prepare("select count(customer_id) from transactions where customer_id = ? and time >= ? and time < ?")
+    numPerPeriodStmt, err := db.Prepare("select count(customer_id) from transactions where customer_id = ? and time >= ? and time < ? and accepted = 1")
     if err != nil {
         db.Close()
         return err
@@ -109,8 +109,10 @@ func (cs *CustStoreSqlite) Close() {
 
 // Not exported
 
-func (cs *CustStoreSqlite) isDuplicate(id string) (bool, error) {
-    transIdRows, err := cs.checkTransIdStmt.Query(id)
+func (cs *CustStoreSqlite) isDuplicate(
+    id string, customerId string,
+) (bool, error) {
+    transIdRows, err := cs.checkTransIdStmt.Query(id, customerId)
     if err != nil {
         return false, err
     }
@@ -153,13 +155,43 @@ func (cs *CustStoreSqlite) updateAccount(
 }
 
 func (cs *CustStoreSqlite) addTransaction(
-    id string, customerId string, loadAmountCents int64, time time.Time,
+    id string,
+    customerId string,
+    loadAmountCents int64,
+    time time.Time,
+    accepted bool,
 ) error {
-    _, err := cs.addTransactionStmt.Exec(id, customerId, loadAmountCents, time)
+    _, err := cs.addTransactionStmt.Exec(
+        id, customerId, loadAmountCents, time, accepted)
     return err
 }
 
 // Exported
+
+/*
+    Save transaction record if not a duplicate id.
+
+    Returns error if fails.
+ */
+func (cs *CustStoreSqlite) AddTransaction(
+    id string,
+    customerId string,
+    loadAmountCents int64,
+    time time.Time,
+    accepted bool,
+) error {
+    // Check transaction id
+    isDuplicate, err := cs.isDuplicate(id, customerId)
+    if err != nil {
+        return err
+    }
+    if isDuplicate {
+        return custstore.DuplicateError
+    }
+    // Add to transactions
+    err = cs.addTransaction(id, customerId, loadAmountCents, time, accepted)
+    return err
+}
 
 /*
     Update apply a transaction to customer balance, save transaction record if
@@ -171,7 +203,7 @@ func (cs *CustStoreSqlite) BalanceAdd(
     id string, customerId string, loadAmountCents int64, time time.Time,
 ) error {
     // Check transaction id
-    isDuplicate, err := cs.isDuplicate(id)
+    isDuplicate, err := cs.isDuplicate(id, customerId)
     if err != nil {
         return err
     }
@@ -200,7 +232,7 @@ func (cs *CustStoreSqlite) BalanceAdd(
     }
 
     // Add to transactions
-    err = cs.addTransaction(id, customerId, loadAmountCents, time)
+    err = cs.addTransaction(id, customerId, loadAmountCents, time, true)
     if err != nil {
         // Customer and account records will remain created and updated,
         // no rollback.

@@ -15,9 +15,12 @@ create table accounts (
 );
 
 create table transactions (
-    id text primary key not null,
+    id text not null,
     customer_id text references customers(customer_id) not null,
     load_amount integer not null,
-    time text not null
+    time text not null,
+    accepted integer not null,
+
+    primary key (id, customer_id)
 );
 

@@ -192,7 +192,9 @@ func (handler *FundsHandler) Load(
         return isOk, err
     }
     if !isOk {
-        return false, nil
+        err = handler.store.AddTransaction(
+            transId, customerId, loadAmountCents, transTime, false)
+        return false, err
     }
 
     err = handler.store.BalanceAdd(

@@ -8,12 +8,22 @@ type CustStore interface {
     Open() error
     Close()
 
+    AddTransaction(
+        id string,
+        customerId string,
+        loadAmountCents int64,
+        time time.Time,
+        accepted bool,
+    ) error
+
     BalanceAdd(
         id string, customerId string, loadAmountCents int64, time time.Time,
     ) error
+
     GetLoadAmountForPeriod(
         customerId string, startAt time.Time, endBefore time.Time,
     ) (int64, error)
+
     GetNumForPeriod(
         customerId string, startAt time.Time, endBefore time.Time,
     ) (int64, error)

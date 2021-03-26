@@ -142,8 +142,8 @@ func update(
             // Duplicate is not a real error, just ignore (accept).
             if loadErr != custstore.DuplicateError {
                 fmt.Fprintf(os.Stderr, "Balance update: %v\n", loadErr)
-                continue
             }
+            continue
         }
 
         putAcceptErr := putAcceptance(outputEncoder, &t, loadAccepted)
