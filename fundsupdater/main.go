@@ -24,7 +24,7 @@ func main() {
         output_file_name = os.Args[2]
     }
 
-    store := custstoresqlite.NewCustStoreSqlite()
+    store := custstoresqlite.NewCustStoreSqlite("cust_store.db")
     storeErr := store.Open()
     if storeErr != nil {
         fmt.Fprintf(os.Stderr, "Opening custome store: %v", storeErr)

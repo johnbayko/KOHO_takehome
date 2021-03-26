@@ -10,6 +10,7 @@ import (
 )
 
 type CustStoreSqlite struct {
+    dbName string
     db *sql.DB
 
     checkTransIdStmt *sql.Stmt
@@ -23,12 +24,12 @@ type CustStoreSqlite struct {
     numPerPeriodStmt *sql.Stmt
 }
 
-func NewCustStoreSqlite() *CustStoreSqlite {
-    return &CustStoreSqlite { }
+func NewCustStoreSqlite(dbName string) *CustStoreSqlite {
+    return &CustStoreSqlite { dbName: dbName }
 }
 
 func (cs *CustStoreSqlite) Open() error {
-    db, err := sql.Open("sqlite3", "cust_store.db")
+    db, err := sql.Open("sqlite3", cs.dbName)
     if err != nil {
         return err
     }

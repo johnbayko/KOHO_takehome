@@ -1,0 +1,14 @@
+# Unit tests
+go test ./...
+
+# remove output file
+rm output2.txt
+
+# reset database
+sqlite3 cust_store.db < custstoresqlite/setup.sql
+
+# run update
+echo go run ./fundsupdater input.txt output2.txt
+go run ./fundsupdater input.txt output2.txt
+
+diff output.txt output2.txt | tee output.diff
