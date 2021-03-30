@@ -92,55 +92,69 @@ func (csm *custStoreMock) Close() {
 func (csm *custStoreMock) GetLoadAmountForPeriod(
     customerId string, startAt time.Time, endBefore time.Time,
 ) (int64, error) {
+    // These are copies to simplify, use csm to increment arg indexes.
     mock := csm.getLoadAmountForPeriod
-    if mock.args[mock.argsIdx].customerId != customerId {
+    argsIdx := mock.argsIdx
+    args := mock.args[argsIdx]
+
+    if args.customerId != customerId {
         globalT.Errorf("%v: GetLoadAmountForPeriod() customerId expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].customerId, customerId)
+            globalTestNum, args.customerId, customerId)
     }
-    if !mock.args[mock.argsIdx].startAt.Equal(startAt) {
+    if !args.startAt.Equal(startAt) {
         globalT.Errorf("%v: GetLoadAmountForPeriod() startAt expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].startAt, startAt)
+            globalTestNum, args.startAt, startAt)
     }
-    if !mock.args[mock.argsIdx].endBefore.Equal(endBefore) {
+    if !args.endBefore.Equal(endBefore) {
         globalT.Errorf("%v: GetLoadAmountForPeriod() endBefore expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].endBefore, endBefore)
+            globalTestNum, args.endBefore, endBefore)
     }
-    mock.argsIdx = mock.argsIdx + 1
+    csm.getLoadAmountForPeriod.argsIdx =
+        csm.getLoadAmountForPeriod.argsIdx + 1
 
     // Need to use current returnsIdx, but increment before returning
     // (defer doesn't like doing that)
     returnsIdx := mock.returnsIdx
-    mock.returnsIdx = mock.returnsIdx + 1
+    returns := mock.returns[returnsIdx]
+    csm.getLoadAmountForPeriod.returnsIdx =
+        csm.getLoadAmountForPeriod.returnsIdx + 1
 
-    return mock.returns[returnsIdx].amount, mock.returns[returnsIdx].err
+    return returns.amount, returns.err
 }
 
 func (csm *custStoreMock) GetNumForPeriod(
     customerId string, startAt time.Time, endBefore time.Time,
 ) (int64, error) {
+    // These are copies to simplify, use csm to increment arg indexes.
     mock := csm.getNumForPeriod
-    if mock.args[mock.argsIdx].customerId != customerId {
+    argsIdx := mock.argsIdx
+    args := mock.args[argsIdx]
+
+    if args.customerId != customerId {
         globalT.Errorf("%v: GetNumForPeriod() customerId expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].customerId, customerId)
+            globalTestNum, args.customerId, customerId)
     }
-    if !mock.args[mock.argsIdx].startAt.Equal(startAt) {
+    if !args.startAt.Equal(startAt) {
         globalT.Errorf("%v: GetNumForPeriod() startAt expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].startAt, startAt)
+            globalTestNum, args.startAt, startAt)
     }
-    if !mock.args[mock.argsIdx].endBefore.Equal(endBefore) {
+    if !args.endBefore.Equal(endBefore) {
         globalT.Errorf("%v: GetNumForPeriod() endBefore expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].endBefore, endBefore)
+            globalTestNum, args.endBefore, endBefore)
     }
     // TODO Index gets incremented here, but reset to 0 next call for some
     // reason, making test fail incorrectly.
-    mock.argsIdx = mock.argsIdx + 1
+    csm.getNumForPeriod.argsIdx =
+        csm.getNumForPeriod.argsIdx + 1
 
     // Need to use current returnsIdx, but increment before returning
     // (defer doesn't like doing that)
     returnsIdx := mock.returnsIdx
-    mock.returnsIdx = mock.returnsIdx + 1
+    returns := mock.returns[returnsIdx]
+    csm.getNumForPeriod.returnsIdx =
+        csm.getNumForPeriod.returnsIdx + 1
 
-    return mock.returns[returnsIdx].amount, mock.returns[returnsIdx].err
+    return returns.amount, returns.err
 }
 func (csm *custStoreMock) AddTransaction(
     id string,
@@ -149,68 +163,82 @@ func (csm *custStoreMock) AddTransaction(
     time time.Time,
     accepted bool,
 ) error {
+    // These are copies to simplify, use csm to increment arg indexes.
     mock := csm.addTransaction
-    if mock.args[mock.argsIdx].id != id {
+    argsIdx := mock.argsIdx
+    args := mock.args[argsIdx]
+
+    if args.id != id {
         globalT.Errorf("%v: GetLoadAmountForPeriod() id expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].id, id)
+            globalTestNum, args.id, id)
     }
-    if mock.args[mock.argsIdx].customerId != customerId {
+    if args.customerId != customerId {
         globalT.Errorf(
             "%v: GetLoadAmountForPeriod() customerId expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].customerId, customerId)
+            globalTestNum, args.customerId, customerId)
     }
-    if mock.args[mock.argsIdx].loadAmountCents != loadAmountCents {
+    if args.loadAmountCents != loadAmountCents {
         globalT.Errorf(
             "%v: GetLoadAmountForPeriod() loadAmountCents expected %v got %v",
             globalTestNum,
-            mock.args[mock.argsIdx].loadAmountCents,
+            args.loadAmountCents,
             loadAmountCents,
         )
     }
-    if !mock.args[mock.argsIdx].time.Equal(time) {
+    if !args.time.Equal(time) {
         globalT.Errorf("%v: GetLoadAmountForPeriod() time expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].time, time)
+            globalTestNum, args.time, time)
     }
-    if mock.args[mock.argsIdx].accepted != accepted {
+    if args.accepted != accepted {
         globalT.Errorf(
             "%v: GetLoadAmountForPeriod() accepted expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].accepted, accepted)
+            globalTestNum, args.accepted, accepted)
     }
-    mock.argsIdx = mock.argsIdx + 1
+    csm.addTransaction.argsIdx =
+        csm.addTransaction.argsIdx + 1
 
     // Need to use current returnsIdx, but increment before returning
     // (defer doesn't like doing that)
     returnsIdx := mock.returnsIdx
-    mock.returnsIdx = mock.returnsIdx + 1
+    returns := mock.returns[returnsIdx]
+    csm.addTransaction.returnsIdx =
+        csm.addTransaction.returnsIdx + 1
 
-    return mock.returns[returnsIdx].err
+    return returns.err
 }
 
 func (csm *custStoreMock) BalanceAdd(
     customerId string, loadAmountCents int64,
 ) error {
+    // These are copies to simplify, use csm to increment arg indexes.
     mock := csm.balanceAdd
-    if mock.args[mock.argsIdx].customerId != customerId {
+    argsIdx := mock.argsIdx
+    args := mock.args[argsIdx]
+
+    if args.customerId != customerId {
         globalT.Errorf(
             "%v: GetLoadAmountForPeriod() customerId expected %v got %v",
-            globalTestNum, mock.args[mock.argsIdx].customerId, customerId)
+            globalTestNum, args.customerId, customerId)
     }
-    if mock.args[mock.argsIdx].loadAmountCents != loadAmountCents {
+    if args.loadAmountCents != loadAmountCents {
         globalT.Errorf(
             "%v: GetLoadAmountForPeriod() loadAmountCents expected %v got %v",
             globalTestNum,
-            mock.args[mock.argsIdx].loadAmountCents,
+            args.loadAmountCents,
             loadAmountCents,
         )
     }
-    mock.argsIdx = mock.argsIdx + 1
+    csm.balanceAdd.argsIdx =
+        csm.balanceAdd.argsIdx + 1
 
     // Need to use current returnsIdx, but increment before returning
     // (defer doesn't like doing that)
     returnsIdx := mock.returnsIdx
-    mock.returnsIdx = mock.returnsIdx + 1
+    returns := mock.returns[returnsIdx]
+    csm.balanceAdd.returnsIdx =
+        csm.balanceAdd.returnsIdx + 1
 
-    return mock.returns[returnsIdx].err
+    return returns.err
 }
 
 
@@ -251,7 +279,7 @@ func TestLoad(t *testing.T) {
                         {
                             "234",
                             time.Date(2019, 12, 30, 0, 0, 0, 0, time.UTC),
-                            time.Date(2020, 01, 05, 0, 0, 0, 0, time.UTC),
+                            time.Date(2020, 01, 06, 0, 0, 0, 0, time.UTC),
                         },
                     },
                     0, // argIdx
