@@ -35,7 +35,7 @@ with a chronological input file and an output file.
 
 In a real application, even if input is in batches like the example, the
 transactions and accounts would need to persist, so a database would be needed.
-I was surprised that only two other solutions mentioned or implemented
+I was surprised that few solutions mentioned or implemented
 persistent storage.
 
 Peristence can be accomplished many ways, so the interface to the program
@@ -91,6 +91,15 @@ file.
 Some of the input fields need parsing, so ``getTransaction()`` encapsulates all
 code to read a transaction and parse any fields to produce a transaction record
 the rest of the program uses.
+
+I saved the transaction amount as an integer in cents, rather than floating
+point numbers, because binary floating point numbers can't accurately represent
+fractional decimals. The floating point approximation can be close enough for
+most cases, for example floating point 1/10 (10 cents) differs from actual
+$0.10 by less than a billionth of a cent, but problems happen as errors build
+up, and with comparisons (e.g. 0.1 + 0.2 == 0.3 is ``false``). Because of this,
+actual accounting uses integers with very specific rouding rules, so I used
+integers to represent the fund amounts here.
 
 Similarly, ``putAcceptance()`` constructs and writes the output record from the
 original transaction record.
